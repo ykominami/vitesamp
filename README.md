@@ -1,73 +1,79 @@
-# React + TypeScript + Vite
+# Subscription Analytics Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+モバイルアプリのサブスクリプション契約状況を可視化するダッシュボードです。
 
-Currently, two official plugins are available:
+## 機能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### KPI指標
+- **有効サブスク数** - 現在のアクティブなサブスクリプション数
+- **新規** - 期間中の新規サブスクリプション数
+- **解約** - 期間中の解約数
+- **MRR** - 月間定期収益（Monthly Recurring Revenue）
+- **トライアル転換率** - トライアルから有料への転換率
 
-## React Compiler
+### フィルター機能
+- **期間選択** - 日付ピッカーで開始日・終了日を指定
+- **プラットフォーム** - All / iOS / Android
+- **プラン種別** - All / Monthly（月額） / Yearly（年額）
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+フィルターを変更すると、全てのKPI指標とグラフがリアルタイムで更新されます。
 
-## Expanding the ESLint configuration
+### グラフ
+1. **Active Subscriptions Trend** - アクティブサブスクリプションの推移（エリアチャート）
+2. **New vs Churned** - 新規と解約の比較（バーチャート）
+3. **MRR Trend** - MRRの推移（エリアチャート）
+4. **Trial Conversion Rate** - トライアル転換率の推移（ラインチャート）
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 生データ表示機能
+ヘッダーの「View Raw Data」ボタンをクリックすると、生データをテーブル形式で閲覧できます。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- ページネーション対応（50件ずつ表示）
+- 検索機能（日付、プラットフォーム、プラン種別で絞り込み）
+- CSV/JSONエクスポート機能
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### ダミーデータの特徴
+- **サーバー起動ごとに異なるデータ** - 起動時のタイムスタンプをシードとして使用
+- **ランダム性のある現実的なデータ**
+  - ベース値にランダムな変動を適用
+  - 週末は活動が若干低下
+  - 年間を通じた成長トレンド
+  - マーケティングキャンペーン期間のスパイク（Black Fridayなど）
+  - iOS > Android の売上傾向
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## セットアップ
+
+```bash
+# 依存関係のインストール
+npm install
+
+# 開発サーバーの起動
+npm run dev
+
+# プロダクションビルド
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 技術スタック
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **React** + **TypeScript** - フロントエンドフレームワーク
+- **Vite** - ビルドツール
+- **Tailwind CSS** - スタイリング
+- **Recharts** - グラフライブラリ
+- **date-fns** - 日付操作
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## プロジェクト構成
+
+```
+src/
+├── components/
+│   ├── Charts.tsx      # グラフコンポーネント
+│   ├── Filters.tsx     # フィルターコンポーネント
+│   ├── KPICards.tsx    # KPIカードコンポーネント
+│   └── RawDataModal.tsx # 生データ表示モーダル
+├── data/
+│   └── generateData.ts # ダミーデータ生成ロジック
+├── types/
+│   └── index.ts        # 型定義
+├── App.tsx             # メインアプリケーション
+└── main.tsx            # エントリーポイント
 ```

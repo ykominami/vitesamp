@@ -1,15 +1,21 @@
 import type { DailyMetrics, FilterState, AggregatedMetrics, ChartDataPoint } from '../types';
 import { format, eachDayOfInterval, parseISO, isWithinInterval } from 'date-fns';
 
-// Seeded random for reproducibility
-function seededRandom(seed: number): () => number {
+// Random number generator using current timestamp as seed for different data on each server start
+function createRandom(): () => number {
+  let seed = Date.now() % 233280;
   return function() {
     seed = (seed * 9301 + 49297) % 233280;
     return seed / 233280;
   };
 }
 
-const random = seededRandom(12345);
+const random = createRandom();
+
+// Additional randomness using Math.random for more variation
+function randomVariance(base: number, range: number): number {
+  return base + (random() - 0.5) * range * 2;
+}
 
 function generateDailyData(): DailyMetrics[] {
   const data: DailyMetrics[] = [];
@@ -20,35 +26,59 @@ function generateDailyData(): DailyMetrics[] {
   const platforms: Array<'ios' | 'android'> = ['ios', 'android'];
   const planTypes: Array<'monthly' | 'yearly'> = ['monthly', 'yearly'];
 
-  // Base values (iOS tends to have higher revenue)
+  // Randomize base values within realistic ranges
   const baseValues = {
-    ios: { monthly: { active: 8000, new: 120, churn: 80 }, yearly: { active: 3000, new: 30, churn: 15 } },
-    android: { monthly: { active: 6000, new: 100, churn: 70 }, yearly: { active: 2000, new: 25, churn: 12 } },
+    ios: {
+      monthly: {
+        active: Math.round(randomVariance(8000, 2000)),
+        new: Math.round(randomVariance(120, 30)),
+        churn: Math.round(randomVariance(80, 20))
+      },
+      yearly: {
+        active: Math.round(randomVariance(3000, 800)),
+        new: Math.round(randomVariance(30, 10)),
+        churn: Math.round(randomVariance(15, 5))
+      }
+    },
+    android: {
+      monthly: {
+        active: Math.round(randomVariance(6000, 1500)),
+        new: Math.round(randomVariance(100, 25)),
+        churn: Math.round(randomVariance(70, 18))
+      },
+      yearly: {
+        active: Math.round(randomVariance(2000, 500)),
+        new: Math.round(randomVariance(25, 8)),
+        churn: Math.round(randomVariance(12, 4))
+      }
+    },
   };
 
-  // Price per plan
+  // Price per plan with slight random variation
   const prices = {
-    monthly: 9.99,
-    yearly: 79.99 / 12, // Monthly equivalent
+    monthly: randomVariance(9.99, 2),
+    yearly: randomVariance(79.99, 15) / 12,
   };
 
-  // Spike events (marketing campaigns, app features, etc.)
+  // Randomize spike events timing and intensity
   const spikeEvents = [
-    { start: '2024-01-15', end: '2024-01-20', multiplier: 1.8, type: 'new' },
-    { start: '2024-03-01', end: '2024-03-07', multiplier: 2.0, type: 'new' },
-    { start: '2024-05-10', end: '2024-05-15', multiplier: 1.5, type: 'churn' },
-    { start: '2024-06-20', end: '2024-06-30', multiplier: 2.2, type: 'new' },
-    { start: '2024-09-01', end: '2024-09-10', multiplier: 1.8, type: 'new' },
-    { start: '2024-11-25', end: '2024-12-02', multiplier: 2.5, type: 'new' }, // Black Friday
-    { start: '2024-12-20', end: '2024-12-31', multiplier: 1.6, type: 'new' },
+    { start: '2024-01-15', end: '2024-01-20', multiplier: randomVariance(1.8, 0.3), type: 'new' },
+    { start: '2024-03-01', end: '2024-03-07', multiplier: randomVariance(2.0, 0.4), type: 'new' },
+    { start: '2024-05-10', end: '2024-05-15', multiplier: randomVariance(1.5, 0.3), type: 'churn' },
+    { start: '2024-06-20', end: '2024-06-30', multiplier: randomVariance(2.2, 0.5), type: 'new' },
+    { start: '2024-09-01', end: '2024-09-10', multiplier: randomVariance(1.8, 0.4), type: 'new' },
+    { start: '2024-11-25', end: '2024-12-02', multiplier: randomVariance(2.5, 0.6), type: 'new' },
+    { start: '2024-12-20', end: '2024-12-31', multiplier: randomVariance(1.6, 0.3), type: 'new' },
   ];
+
+  // Random growth factor for the year
+  const yearlyGrowthRate = randomVariance(0.3, 0.15);
 
   days.forEach((day, dayIndex) => {
     const dateStr = format(day, 'yyyy-MM-dd');
     const dayOfWeek = day.getDay();
-    const monthProgress = day.getMonth() / 11; // 0-1 representing year progress
+    const monthProgress = day.getMonth() / 11;
 
-    // Check for spike events
     let newMultiplier = 1;
     let churnMultiplier = 1;
     spikeEvents.forEach(event => {
@@ -58,18 +88,18 @@ function generateDailyData(): DailyMetrics[] {
       }
     });
 
-    // Weekend effect (slightly lower activity)
-    const weekendFactor = (dayOfWeek === 0 || dayOfWeek === 6) ? 0.85 : 1;
+    // Weekend effect with random variation
+    const weekendFactor = (dayOfWeek === 0 || dayOfWeek === 6) ? randomVariance(0.85, 0.1) : 1;
 
-    // Growth trend throughout the year
-    const growthTrend = 1 + monthProgress * 0.3;
+    // Growth trend with randomized rate
+    const growthTrend = 1 + monthProgress * yearlyGrowthRate;
 
     platforms.forEach(platform => {
       planTypes.forEach(planType => {
         const base = baseValues[platform][planType];
 
-        // Calculate metrics with randomness and trends
-        const variance = () => 0.8 + random() * 0.4;
+        // Higher variance for more realistic fluctuations
+        const variance = () => 0.7 + random() * 0.6;
 
         const newSubs = Math.round(
           base.new * variance() * weekendFactor * newMultiplier * growthTrend
@@ -79,15 +109,13 @@ function generateDailyData(): DailyMetrics[] {
           base.churn * variance() * churnMultiplier * (1 + monthProgress * 0.1)
         );
 
-        // Active subscriptions grow over time
         const activeBase = base.active * growthTrend;
-        const activeSubs = Math.round(activeBase + (dayIndex * (base.new - base.churn) * 0.3));
+        const activeSubs = Math.round(activeBase + (dayIndex * (base.new - base.churn) * randomVariance(0.3, 0.1)));
 
-        // Trial conversions (typically 20-40% of new subs come from trials)
-        const trialStarts = Math.round(newSubs * (1.5 + random() * 0.5));
-        const trialConversions = Math.round(trialStarts * (0.25 + random() * 0.15));
+        // Trial conversions with more randomness
+        const trialStarts = Math.round(newSubs * (1.3 + random() * 0.7));
+        const trialConversions = Math.round(trialStarts * (0.2 + random() * 0.2));
 
-        // MRR calculation
         const mrr = activeSubs * prices[planType];
 
         data.push({
@@ -108,8 +136,13 @@ function generateDailyData(): DailyMetrics[] {
   return data;
 }
 
-// Generate data once
+// Generate data once on module load (changes on each server restart)
 const allData = generateDailyData();
+
+// Export raw data for viewing
+export function getRawData(): DailyMetrics[] {
+  return allData;
+}
 
 export function filterData(filters: FilterState): DailyMetrics[] {
   return allData.filter(item => {
@@ -136,7 +169,6 @@ export function aggregateMetrics(data: DailyMetrics[], _filters: FilterState): A
     };
   }
 
-  // Group by date and sum
   const byDate = new Map<string, { active: number; new: number; churned: number; mrr: number; trialStarts: number; trialConversions: number }>();
 
   data.forEach(item => {
@@ -155,7 +187,6 @@ export function aggregateMetrics(data: DailyMetrics[], _filters: FilterState): A
   const latestDate = sortedDates[sortedDates.length - 1];
   const latestMetrics = byDate.get(latestDate)!;
 
-  // Calculate totals
   let totalNew = 0;
   let totalChurned = 0;
   let totalTrialStarts = 0;
@@ -168,7 +199,6 @@ export function aggregateMetrics(data: DailyMetrics[], _filters: FilterState): A
     totalTrialConversions += metrics.trialConversions;
   });
 
-  // Calculate period-over-period change
   const periodLength = sortedDates.length;
   const halfPoint = Math.floor(periodLength / 2);
 
@@ -243,7 +273,6 @@ export function getChartData(data: DailyMetrics[]): ChartDataPoint[] {
     }
   });
 
-  // Calculate trial conversion rate per date
   const trialData = new Map<string, { starts: number; conversions: number }>();
   data.forEach(item => {
     const existing = trialData.get(item.date) || { starts: 0, conversions: 0 };

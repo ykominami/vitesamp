@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react';
 import type { FilterState } from './types';
-import { filterData, aggregateMetrics, getChartData, getDefaultFilters } from './data/generateData';
+import { filterData, aggregateMetrics, getChartData, getDefaultFilters, getRawData } from './data/generateData';
 import { Filters } from './components/Filters';
 import { KPICards } from './components/KPICards';
 import { Charts } from './components/Charts';
+import { RawDataModal } from './components/RawDataModal';
 
 function App() {
   const [filters, setFilters] = useState<FilterState>(getDefaultFilters());
+  const [showRawData, setShowRawData] = useState(false);
 
   const filteredData = useMemo(() => filterData(filters), [filters]);
   const metrics = useMemo(() => aggregateMetrics(filteredData, filters), [filteredData, filters]);
@@ -28,11 +30,20 @@ function App() {
                 <p className="text-sm text-slate-500">Mobile App Dashboard</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-slate-500">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowRawData(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+                View Raw Data
+              </button>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
                 Live Data
               </span>
-              <span>Last updated: Just now</span>
+              <span className="text-sm text-slate-500">Last updated: Just now</span>
             </div>
           </div>
         </div>
@@ -47,10 +58,17 @@ function App() {
       <footer className="border-t border-slate-200 bg-white mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-sm text-slate-500 text-center">
-            Subscription Analytics Dashboard - Demo Data
+            Subscription Analytics Dashboard - Demo Data (regenerated on each server start)
           </p>
         </div>
       </footer>
+
+      {showRawData && (
+        <RawDataModal
+          data={getRawData()}
+          onClose={() => setShowRawData(false)}
+        />
+      )}
     </div>
   );
 }
